@@ -1,0 +1,181 @@
+// ============================================================
+// Prisma Schema — Sistema de Control de Mascotas Perdidas
+// ============================================================
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ============================================================
+// ENTIDAD: Zona
+// ============================================================
+model Zona {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique
+  ciudad      String
+  departamento String
+  descripcion String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  usuarios    Usuario[]
+  reportes    Reporte[]
+
+  @@map("zonas")
+}
+
+// ============================================================
+// ENTIDAD: Especie
+// ============================================================
+model Especie {
+  id          Int       @id @default(autoincrement())
+  nombre      String    @unique   // Ej: Perro, Gato, Conejo
+  descripcion String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  mascotas    Mascota[]
+
+  @@map("especies")
+}
+
+// ============================================================
+// ENTIDAD: Usuario
+// Cubre CU-01: Registrar usuario (dueño o colaborador)
+// ============================================================
+model Usuario {
+  id             Int       @id @default(autoincrement())
+  nombres        String
+  apellidos      String
+  correo         String    @unique
+  telefono       String
+  contrasena     String
+  rol            RolUsuario @default(COLABORADOR)
+  zonaId         Int
+  activo         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  zona           Zona         @relation(fields: [zonaId], references: [id])
+  mascotas       Mascota[]
+  avistamientos  Avistamiento[]
+
+  @@map("usuarios")
+}
+
+enum RolUsuario {
+  DUENO
+  COLABORADOR
+}
+
+// ============================================================
+// ENTIDAD: Mascota
+// Información base de la mascota del dueño
+// ============================================================
+model Mascota {
+  id          Int       @id @default(autoincrement())
+  nombre      String
+  especieId   Int
+  raza        String?
+  color       String
+  edad        Int?      // En meses
+  sexo        SexoMascota
+  descripcion String?
+  fotoUrl     String?
+  duenioId    Int
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  especie     Especie   @relation(fields: [especieId], references: [id])
+  duenio      Usuario   @relation(fields: [duenioId], references: [id])
+  reportes    Reporte[]
+
+  @@map("mascotas")
+}
+
+enum SexoMascota {
+  MACHO
+  HEMBRA
+  DESCONOCIDO
+}
+
+// ============================================================
+// ENTIDAD: Reporte
+// Cubre CU-02: Crear reporte de mascota perdida
+// Cubre CU-04: Buscar reportes activos
+// Cubre CU-05: Marcar reporte como resuelto
+// ============================================================
+model Reporte {
+  id              Int           @id @default(autoincrement())
+  mascotaId       Int
+  zonaId          Int
+  descripcion     String
+  fechaExtravio   DateTime
+  latitud         Float?
+  longitud        Float?
+  direccionTexto  String?
+  estado          EstadoReporte @default(ACTIVO)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  mascota         Mascota       @relation(fields: [mascotaId], references: [id])
+  zona            Zona          @relation(fields: [zonaId], references: [id])
+  perdida         Perdida?
+  avistamientos   Avistamiento[]
+
+  @@map("reportes")
+}
+
+enum EstadoReporte {
+  ACTIVO
+  RESUELTO
+  CERRADO
+}
+
+// ============================================================
+// ENTIDAD: Perdida
+// Detalle extendido del evento de pérdida (CU-02)
+// Relación 1-a-1 con Reporte
+// ============================================================
+model Perdida {
+  id              Int       @id @default(autoincrement())
+  reporteId       Int       @unique
+  fotoUrl         String?
+  circunstancias  String?   // Cómo se perdió
+  recompensa      Float?
+  contactoUrgente String?   // Teléfono adicional de emergencia
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  reporte         Reporte   @relation(fields: [reporteId], references: [id])
+
+  @@map("perdidas")
+}
+
+// ============================================================
+// ENTIDAD: Avistamiento
+// Cubre CU-03: Registrar avistamiento de mascota
+// ============================================================
+model Avistamiento {
+  id              Int       @id @default(autoincrement())
+  reporteId       Int
+  colaboradorId   Int
+  fechaAvistamiento DateTime
+  latitud         Float?
+  longitud        Float?
+  direccionTexto  String?
+  observaciones   String
+  fotoUrl         String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  reporte         Reporte   @relation(fields: [reporteId], references: [id])
+  colaborador     Usuario   @relation(fields: [colaboradorId], references: [id])
+
+  @@map("avistamientos")
+}
