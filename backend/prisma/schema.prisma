@@ -8,7 +8,9 @@ datasource db {
 }
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  output          = "../generated/prisma"
+  previewFeatures = ["driverAdapters"]
 }
 
 // ============================================================
@@ -115,6 +117,7 @@ model Reporte {
   mascotaId       Int
   zonaId          Int
   descripcion     String
+  telefono        String?
   fechaExtravio   DateTime
   latitud         Float?
   longitud        Float?

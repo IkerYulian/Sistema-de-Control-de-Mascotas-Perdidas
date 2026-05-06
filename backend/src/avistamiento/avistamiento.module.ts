@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { AvistamientoController } from './avistamiento.controller';
 import { AvistamientoService } from './avistamiento.service';
+import { AvistamientoController } from './avistamiento.controller';
+import { PrismaService } from '../prisma.service';
 
 @Module({
   controllers: [AvistamientoController],
-  providers: [AvistamientoService]
+  providers: [AvistamientoService, PrismaService],
 })
 export class AvistamientoModule {}
